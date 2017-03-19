@@ -9,34 +9,14 @@ from datetime import datetime
 
 import exifread
 
-def creation_time(image):
-    try:
-        with image.open('rb') as fp:
-            tags = exifread.process_file(fp, details=False, strict=True)
-
-            key = 'Image DateTime'
-            key_ = key + 'Original'
-            ctime = tags[key_] if key_ in tags else tags[key]
-
-            return datetime.strptime(str(ctime), '%Y:%m:%d %H:%M:%S')
-    except IsADirectoryError:
-        pass
-    except KeyError:
-        pass
-
-    raise ValueError()
-
-def mkfname(source, destination, ctime):
-    destfmt = [ '%Y', '%m-%b', '%d-%H%M%S' ]
-    (*relative, base) = [ ctime.strftime(x).upper() for x in destfmt ]
-    
-    path = destination.joinpath(*relative)
+def mkfname(source, path):
+    suffix = source.suffix.lower()
 
     for j in range(100):
         fname = '{0}-{1:02d}'.format(base, j)
-        output = path.joinpath(fname).with_suffix(source.suffix.lower())
-        if not output.exists():
-            return output
+        destination = path.joinpath(fname).with_suffix(suffix)
+        if not destination.exists():
+            return destination
 
     raise ValueError()
 
@@ -46,20 +26,34 @@ arguments.add_argument('--destination', type=Path)
 # arguments.add_argument('--adjust')
 args = arguments.parse_args()
 
-picture = 1
+progress = 1
+destfmt = [ '%Y', '%m-%b', '%d-%H%M%S' ]
+
 for source in args.source.glob('**/*'):
-    try:
-        ctime = creation_time(source)
-        output = mkfname(source, args.destination, ctime)
-    except ValueError:
+    if source.is_dir():
         continue
 
-    destination = str(output)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(str(source), destination)
-    os.chmod(destination, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+    with source.open('rb') as fp:
+        tags = exifread.process_file(fp, details=False, strict=True)
 
-    for (i, j) in zip(('<', '>'), (source, output)):
-        print(picture, i, str(j))
+    key = 'Image DateTime'
+    key_ = key + 'Original'
+    try:
+        creation = tags[key_] if key_ in tags else tags[key]
+    except KeyError:
+        continue
 
-    picture += 1
+    ctime = datetime.strptime(str(creation), '%Y:%m:%d %H:%M:%S')
+    (*relative, base) = [ ctime.strftime(x).upper() for x in destfmt ]
+    path = args.destination.joinpath(*relative)
+    destination = mkfname(source, path)
+
+    fname = str(destination)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(str(source), fname)
+    os.chmod(fname, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+
+    for (i, j) in zip(('<', '>'), (source, destination)):
+        print(progress, i, str(j))
+
+    progress += 1
