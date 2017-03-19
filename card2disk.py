@@ -54,6 +54,7 @@ for (i, source) in enumerate(args.source.glob('**/*')):
         continue
 
     destination = str(output)
+    output.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(str(source), destination)
     os.chmod(destination, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
