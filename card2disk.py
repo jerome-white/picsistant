@@ -46,7 +46,8 @@ arguments.add_argument('--destination', type=Path)
 # arguments.add_argument('--adjust')
 args = arguments.parse_args()
 
-for (i, source) in enumerate(args.source.glob('**/*')):
+picture = 1
+for source in args.source.glob('**/*'):
     try:
         ctime = creation_time(source)
         output = mkfname(source, args.destination, ctime)
@@ -58,5 +59,7 @@ for (i, source) in enumerate(args.source.glob('**/*')):
     shutil.copy2(str(source), destination)
     os.chmod(destination, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
-    for (j, k) in zip(('<', '>'), (source, output)):
-        print(i, j, str(k))
+    for (i, j) in zip(('<', '>'), (source, output)):
+        print(picture, i, str(j))
+
+    picture += 1
