@@ -3,9 +3,8 @@ import stat
 import shutil
 import operator as op
 from pathlib import Path
-from argparse import ArgumentParser
 from datetime import datetime
-from itertools import filterfalse
+from argparse import ArgumentParser
 from multiprocessing import Pool
 
 import exifread
@@ -13,8 +12,8 @@ import exifread
 def mkfname(source, path, prefix):
     suffix = source.suffix.lower()
 
-    for j in range(100):
-        fname = '{0}-{1:02d}'.format(prefix, j)
+    for i in range(100):
+        fname = '{0}-{1:02d}'.format(prefix, i)
         destination = path.joinpath(fname).with_suffix(suffix)
         if not destination.exists():
             return destination
@@ -58,7 +57,7 @@ arguments.add_argument('--destination', type=Path)
 args = arguments.parse_args()
 
 with Pool() as pool:
-    each = filterfalse(op.methodcaller('is_dir'), args.source.glob('**/*'))
+    each = filter(op.methodcaller('is_file'), args.source.glob('**/*'))
     iterable = map(lambda x: (x, args.destination), each)
 
     for (i, j) in enumerate(filter(None, pool.imap_unordered(func, iterable))):
