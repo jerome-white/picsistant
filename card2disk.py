@@ -44,9 +44,9 @@ def func(args):
         return
     target.parent.mkdir(parents=True, exist_ok=True)
 
-    fname = str(target)
-    shutil.copy2(str(source), fname)
-    os.chmod(fname, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+    (src, dst) = map(str, (source, target))
+    shutil.copy2(src, dst)
+    os.chmod(dst, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
     return (source, target)
 
