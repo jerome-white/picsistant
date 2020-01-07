@@ -42,9 +42,8 @@ def path2fname(path, destination, maxtries):
     tstring = '{}-$version{}'.format(basename, path.suffix)
     template = Template(tstring)
 
-    for i in range(maxtries):
-        version = '{:02d}'.format(i)
-        fname = template.substitute(version=version)
+    for i in map('{:02d}'.format, range(maxtries)):
+        fname = template.substitute(version=i)
         target = destination.joinpath(fname)
         if not target.exists():
             return target
