@@ -1,14 +1,12 @@
 import os
 import sys
+import csv
 import stat
 import shutil
-import operator as op
 from pathlib import Path
 from datetime import datetime
 from argparse import ArgumentParser
 from multiprocessing import Pool
-
-import exifread
 
 class Result:
     def __init__(self, source, target=None):
@@ -22,24 +20,20 @@ class Result:
         return self.source.stem + ' -> ' + str(self.target) if self else ''
 
 def func(args):
-    (source, destination) = args
-
-    #
-    # Read exif information
-    #
-    with source.open('rb') as fp:
-        tags = exifread.process_file(fp, details=False, strict=True)
+    (exif, destination) = args
+    source = Path(exif['SourceFile'])
 
     #
     # Extract the time at which the picture was taken
     #
-    key = 'Image DateTime Original'
-    while key.find(' ') > 0:
-        if key in tags:
-            creation = tags[key]
-            break
-        pieces = key.split()
-        key = ' '.join(pieces[:-1])
+    keys = (
+        'CreateDate',
+        'DateTimeOriginal',
+        'ModifyDate',
+    )
+    for i in filter(lambda x: x in exif, keys):
+        creation = exif[i]
+        break
     else:
         return Result(source)
 
@@ -72,14 +66,13 @@ def func(args):
     return Result(source, target)
 
 arguments = ArgumentParser()
-arguments.add_argument('--source', type=Path)
 arguments.add_argument('--destination', type=Path)
 # arguments.add_argument('--adjust')
 args = arguments.parse_args()
 
 with Pool() as pool:
-    each = filter(op.methodcaller('is_file'), args.source.glob('**/*'))
-    iterable = map(lambda x: (x, args.destination), each)
+    reader = csv.DictReader(sys.stdin)
+    iterable = map(lambda x: (x, args.destination), reader)
 
     for (i, result) in enumerate(pool.imap_unordered(func, iterable)):
         if not result:
