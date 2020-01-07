@@ -38,8 +38,8 @@ def exif2path(exif, suffix):
 # Use the time to create a destination file name
 #
 def path2fname(path, destination, maxtries):
-    tstring = '{}-$version{}'.format(path.parent.joinpath(path.stem),
-                                     path.suffix.lower())
+    basename = path.parent.joinpath(path.stem)
+    tstring = '{}-$version{}'.format(basename, path.suffix)
     template = Template(tstring)
 
     for i in range(maxtries):
