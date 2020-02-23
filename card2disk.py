@@ -50,7 +50,7 @@ def path2fname(path, destination, maxtries):
         if not target.exists():
             return target
 
-    raise ValueError('Cannot create unique filename')
+    raise FileExistsError('Cannot create unique filename')
 
 def func(queue, destination, maxtries):
     while True:
@@ -70,7 +70,7 @@ def func(queue, destination, maxtries):
             os.chmod(dst, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
             print(source.stem, '->', target)
-        except ValueError as err:
+        except (ValueError, FileExistsError) as err:
             print('Error:', source, err, file=sys.stderr)
 
         queue.task_done()
