@@ -34,7 +34,7 @@ def exif2path(exif, suffix):
              .upper())
     path = Path(ctime)
 
-    return path.with_suffix(suffix.lower())
+    return path.with_suffix(suffix)
 
 #
 # Use the time to create a destination file name
