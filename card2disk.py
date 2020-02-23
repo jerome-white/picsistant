@@ -30,9 +30,11 @@ def exif2path(exif, suffix):
     #
     ctime = (datetime
              .strptime(creation, '%Y:%m:%d %H:%M:%S')
-             .strftime('%Y/%m-%b/%d-%H%M%S'))
+             .strftime('%Y/%m-%b/%d-%H%M%S')
+             .upper())
+    path = Path(ctime)
 
-    return Path(ctime.upper()).with_suffix(suffix.lower())
+    return path.with_suffix(suffix.lower())
 
 #
 # Use the time to create a destination file name
