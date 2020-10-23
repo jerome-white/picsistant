@@ -5,6 +5,11 @@ while getopts 'd:s:h' option; do
         s) source=$OPTARG ;;
         d) destination=$OPTARG ;;
         h)
+	    cat <<EOF
+Usage: $0
+ -s Source
+ -d Destination
+EOF
             exit 0
             ;;
         *) echo -e Unrecognized option \"$option\" ;;
