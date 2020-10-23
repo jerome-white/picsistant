@@ -75,22 +75,23 @@ def func(queue, destination, maxtries):
 
         queue.task_done()
 
-arguments = ArgumentParser()
-arguments.add_argument('--destination', type=Path)
-arguments.add_argument('--maxtries', type=int, default=100)
-arguments.add_argument('--workers', type=int)
-# arguments.add_argument('--adjust')
-args = arguments.parse_args()
+if __name__ == '__main__':
+    arguments = ArgumentParser()
+    arguments.add_argument('--destination', type=Path)
+    arguments.add_argument('--maxtries', type=int, default=100)
+    arguments.add_argument('--workers', type=int)
+    # arguments.add_argument('--adjust')
+    args = arguments.parse_args()
 
-queue = JoinableQueue()
-initargs = (
-    queue,
-    args.destination,
-    args.maxtries,
-)
+    queue = JoinableQueue()
+    initargs = (
+        queue,
+        args.destination,
+        args.maxtries,
+    )
 
-with Pool(args.workers, func, initargs):
-    reader = csv.DictReader(sys.stdin)
-    for row in reader:
-        queue.put(row)
-    queue.join()
+    with Pool(args.workers, func, initargs):
+        reader = csv.DictReader(sys.stdin)
+        for row in reader:
+            queue.put(row)
+        queue.join()
