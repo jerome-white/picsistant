@@ -7,7 +7,7 @@ from string import Template
 from pathlib import Path
 from datetime import datetime
 from argparse import ArgumentParser
-from multiprocessing import Pool, JoinableQueue
+from multiprocessing import Pool, Lock, JoinableQueue
 
 def exif2path(exif, suffix):
     #
@@ -39,41 +39,50 @@ def exif2path(exif, suffix):
 #
 # Use the time to create a destination file name
 #
-def path2fname(path, destination, maxtries):
-    basename = path.parent.joinpath(path.stem)
-    tstring = '{}-$version{}'.format(basename, path.suffix)
-    template = Template(tstring)
+class PathName:
+    def __init__(self, maxtries, lock):
+        self.maxtries = maxtries
+        self.lock = lock
 
-    for i in map('{:02d}'.format, range(maxtries)):
-        fname = template.substitute(version=i)
-        target = destination.joinpath(fname)
-        if not target.exists():
-            return target
+    def __call__(self, path, destination):
+        basename = path.parent.joinpath(path.stem)
+        tstring = '{}-$version{}'.format(basename, path.suffix)
+        template = Template(tstring)
 
-    raise FileExistsError('Cannot create unique filename')
+        self.lock.acquire()
+        try:
+            for i in map('{:02d}'.format, range(self.maxtries)):
+                fname = template.substitute(version=i)
+                target = destination.joinpath(fname)
+                if not target.exists():
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.touch()
 
-def func(queue, destination, maxtries):
+                    return target
+        finally:
+            self.lock.release()
+
+        raise FileExistsError('Cannot create unique filename')
+
+def func(queue, lock, destination, maxtries):
+    path2fname = PathName(maxtries, lock)
+
     while True:
         exif = queue.get()
         source = Path(exif['SourceFile'])
 
         try:
             path = exif2path(exif, source.suffix.lower())
-            target = path2fname(path, destination, maxtries)
+            target = path2fname(path, destination)
             (src, dst) = map(str, (source, target))
-
-            #
-            # Disk access!
-            #
-            target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
             os.chmod(dst, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
             print(source.stem, '->', target)
         except (ValueError, FileExistsError) as err:
             print('Error:', source, err, file=sys.stderr)
-
-        queue.task_done()
+        finally:
+            queue.task_done()
 
 if __name__ == '__main__':
     arguments = ArgumentParser()
@@ -86,6 +95,7 @@ if __name__ == '__main__':
     queue = JoinableQueue()
     initargs = (
         queue,
+        Lock(),
         args.destination,
         args.maxtries,
     )
