@@ -3,6 +3,7 @@ import sys
 import csv
 import stat
 import shutil
+import itertools as it
 from string import Template
 from pathlib import Path
 from datetime import datetime
@@ -40,32 +41,33 @@ def exif2path(exif, suffix):
 # Use the time to create a destination file name
 #
 class PathName:
-    def __init__(self, maxtries, lock):
-        self.maxtries = maxtries
+    def __init__(self, destination, lock, maxtries=None):
+        self.destination = destination
         self.lock = lock
+        self.maxtries = float('inf') if maxtries is None else maxtries
 
-    def __call__(self, path, destination):
+    def __call__(self, path):
         basename = path.parent.joinpath(path.stem)
         tstring = '{}-$version{}'.format(basename, path.suffix)
         template = Template(tstring)
 
         self.lock.acquire()
         try:
-            for i in map('{:02d}'.format, range(self.maxtries)):
-                fname = template.substitute(version=i)
-                target = destination.joinpath(fname)
+            for i in it.count():
+                if i > self.maxtries:
+                    raise FileExistsError('Cannot create unique filename')
+                version = '{:02d}'.format(i)
+                fname = template.substitute(version=version)
+                target = self.destination.joinpath(fname)
                 if not target.exists():
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.touch()
-
                     return target
         finally:
             self.lock.release()
 
-        raise FileExistsError('Cannot create unique filename')
-
 def func(queue, lock, destination, maxtries):
-    path2fname = PathName(maxtries, lock)
+    path2fname = PathName(destination, lock, maxtries)
 
     while True:
         exif = queue.get()
@@ -73,7 +75,7 @@ def func(queue, lock, destination, maxtries):
 
         try:
             path = exif2path(exif, source.suffix.lower())
-            target = path2fname(path, destination)
+            target = path2fname(path)
             (src, dst) = map(str, (source, target))
             shutil.copy2(src, dst)
             os.chmod(dst, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
@@ -87,7 +89,7 @@ def func(queue, lock, destination, maxtries):
 if __name__ == '__main__':
     arguments = ArgumentParser()
     arguments.add_argument('--destination', type=Path)
-    arguments.add_argument('--maxtries', type=int, default=100)
+    arguments.add_argument('--maxtries', type=int)
     arguments.add_argument('--workers', type=int)
     # arguments.add_argument('--adjust')
     args = arguments.parse_args()
