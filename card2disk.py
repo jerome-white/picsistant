@@ -22,32 +22,47 @@ logging.captureWarnings(True)
 #
 #
 #
-def exif2path(exif, suffix):
-    #
-    # Extract the time at which the picture was taken
-    #
-    keys = (
+class ExifPath:
+    _keys = (
         'CreateDate',
         'DateTimeOriginal',
         'ModifyDate',
     )
 
-    for i in filter(lambda x: x in exif, keys):
-        creation = exif[i]
-        break
-    else:
-        raise ValueError('Cannot establish creation time')
+    def __init__(self, with_videos):
+        self.support = set([
+            'image',
+        ])
+        if with_videos:
+            self.support.add('video')
 
-    #
-    # Use the time to build a filename
-    #
-    ctime = (datetime
-             .strptime(creation, '%Y:%m:%d %H:%M:%S')
-             .strftime('%Y/%m-%b/%d-%H%M%S')
-             .upper())
-    path = Path(ctime)
+    def __call__(self, exif, suffix):
+        #
+        # Make sure the file type is supported
+        #
+        (mime, _) = exif['MIMEType'].split('/', maxsplit=1)
+        if mime.casefold() not in self.support:
+            raise TypeError(f'Unsupported file type "{mime}"')
 
-    return path.with_suffix(suffix)
+        #
+        # Extract the time at which the picture was taken
+        #
+        for i in filter(lambda x: x in exif, self._keys):
+            creation = exif[i]
+            break
+        else:
+            raise ValueError('Cannot establish creation time')
+
+        #
+        # Use the time to build a filename
+        #
+        ctime = (datetime
+                 .strptime(creation, '%Y:%m:%d %H:%M:%S')
+                 .strftime('%Y/%m-%b/%d-%H%M%S')
+                 .upper())
+        path = Path(ctime)
+
+        return path.with_suffix(suffix)
 
 #
 # Use the time to create a destination file name
@@ -78,8 +93,9 @@ class PathName:
         finally:
             self.lock.release()
 
-def func(queue, lock, destination, maxtries):
-    path2fname = PathName(destination, lock, maxtries)
+def func(queue, lock, args):
+    exif2path = ExifPath(args.with_videos)
+    path2fname = PathName(args.destination, lock, args.maxtries)
 
     while True:
         exif = queue.get()
@@ -92,7 +108,7 @@ def func(queue, lock, destination, maxtries):
             shutil.copy2(src, dst)
             os.chmod(dst, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
             logging.info('{} -> {}'.format(source.name, target))
-        except (ValueError, FileExistsError) as err:
+        except (TypeError, ValueError, FileExistsError) as err:
             logging.error('{} {}'.format(source, err))
         finally:
             queue.task_done()
@@ -101,16 +117,16 @@ if __name__ == '__main__':
     arguments = ArgumentParser()
     arguments.add_argument('--destination', type=Path)
     arguments.add_argument('--maxtries', type=int)
-    arguments.add_argument('--workers', type=int)
+    arguments.add_argument('--with-videos', action='store_true')
     # arguments.add_argument('--adjust')
+    arguments.add_argument('--workers', type=int)
     args = arguments.parse_args()
 
     queue = JoinableQueue()
     initargs = (
         queue,
         Lock(),
-        args.destination,
-        args.maxtries,
+        args,
     )
 
     with Pool(args.workers, func, initargs):
