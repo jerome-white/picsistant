@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export PYTHONLOGLEVEL=info
+
 while getopts 'd:s:h' option; do
     case $option in
         s) source=$OPTARG ;;
