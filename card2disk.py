@@ -3,6 +3,7 @@ import sys
 import csv
 import stat
 import shutil
+import logging
 import itertools as it
 from string import Template
 from pathlib import Path
@@ -10,6 +11,17 @@ from datetime import datetime
 from argparse import ArgumentParser
 from multiprocessing import Pool, Lock, JoinableQueue
 
+#
+# Setup logger
+#
+lvl = os.environ.get('PYTHONLOGLEVEL', 'warning').upper()
+fmt = '[ %(asctime)s %(levelname)s %(process)d ] %(message)s'
+logging.basicConfig(format=fmt, datefmt="%H:%M:%S", level=lvl)
+logging.captureWarnings(True)
+
+#
+#
+#
 def exif2path(exif, suffix):
     #
     # Extract the time at which the picture was taken
@@ -79,10 +91,9 @@ def func(queue, lock, destination, maxtries):
             (src, dst) = map(str, (source, target))
             shutil.copy2(src, dst)
             os.chmod(dst, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
-
-            print(source.stem, '->', target)
+            logging.info('{} -> {}'.format(source.name, target))
         except (ValueError, FileExistsError) as err:
-            print('Error:', source, err, file=sys.stderr)
+            logging.error('{} {}'.format(source, err))
         finally:
             queue.task_done()
 
