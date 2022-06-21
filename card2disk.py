@@ -47,9 +47,10 @@ class ExifPath:
         #
         # Extract the time at which the picture was taken
         #
-        for i in filter(lambda x: x in exif, self._keys):
-            creation = exif[i]
-            break
+        for i in self._keys:
+            if i in exif:
+                creation = exif[i]
+                break
         else:
             raise ValueError('Cannot establish creation time')
 
