@@ -23,6 +23,7 @@ logging.captureWarnings(True)
 #
 #
 class ExifPath:
+    _time = '%Y:%m:%d %H:%M:%S'
     _keys = (
         'CreateDate',
         'DateTimeOriginal',
@@ -58,10 +59,11 @@ class ExifPath:
         # Use the time to build a filename
         #
         ctime = (datetime
-                 .strptime(creation, '%Y:%m:%d %H:%M:%S')
-                 .strftime('%Y/%m-%b/%d-%H%M%S')
-                 .upper())
-        path = Path(ctime)
+                 .strptime(creation, self._time)
+                 .strftime('%Y %m-%b %d-%H%M%S')
+                 .upper()
+                 .split())
+        path = Path(*ctime)
 
         return path.with_suffix(suffix)
 
