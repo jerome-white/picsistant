@@ -28,7 +28,10 @@ Usage: $0
 EOF
             exit 0
             ;;
-        *) echo -e Unrecognized option \"$option\" ;;
+        *)
+	    echo -e Unrecognized option \"$option\"
+	    exit 1
+	    ;;
     esac
 done
 
