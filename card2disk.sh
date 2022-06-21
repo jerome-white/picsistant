@@ -1,25 +1,30 @@
 #!/bin/bash
 
 export PYTHONLOGLEVEL=info
+STUDIO=`mktemp --directory`
 
-tmp=`mktemp --directory`
-while getopts 'd:s:h' option; do
+source=`mktemp --directory --tmpdir=$STUDIO`
+while getopts 'a:d:s:h' option; do
     case $option in
+	a) adjust=$OPTARG ;;
+        d) destination=$OPTARG ;;
         s)
 	    while true; do
-		link=$tmp/`uuid -v4`
+		link=$source/`uuid -v4`
 		if [ ! -e $link ]; then
 		    ln --symbolic "$OPTARG" $link
 		    break
 		fi
 	    done
 	    ;;
-        d) destination=$OPTARG ;;
         h)
 	    cat <<EOF
 Usage: $0
  -s Source
  -d Destination
+ -a Adjust picture timestamp: [+|-]=[H:MM]
+    This argument is passed directly to exiftool's -AllDates
+    option; remember to quote! See the exiftool manpage.
 EOF
             exit 0
             ;;
@@ -27,8 +32,14 @@ EOF
     esac
 done
 
+if [ -n "$adjust" ]; then
+    tmp=`mktemp --directory --tmpdir=$STUDIO`
+    exiftool -AllDates"${adjust}" -out $tmp $source
+    source=$tmp
+fi
+
 caffeinate -i bash <<EOF
-exiftool -recurse -csv -quiet $tmp | \
+exiftool -recurse -csv -quiet $source | \
     python card2disk.py --destination $destination
-rm --recursive --force $tmp
+rm --recursive --force $STUDIO
 EOF
