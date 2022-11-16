@@ -31,7 +31,7 @@ done
 
 if [ -n "$adjust" ]; then
     tmp=`mktemp --directory --tmpdir=$STUDIO`
-    exiftool -AllDates"${adjust}" -out $tmp $source
+    exiftool -recurse -AllDates"${adjust}" -out $tmp $source
     source=$tmp
 fi
 
