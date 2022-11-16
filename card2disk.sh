@@ -9,13 +9,7 @@ while getopts 'a:d:s:h' option; do
 	a) adjust=$OPTARG ;;
         d) destination=$OPTARG ;;
         s)
-	    while true; do
-		link=$source/`uuid -v4`
-		if [ ! -e $link ]; then
-		    ln --symbolic "$OPTARG" $link
-		    break
-		fi
-	    done
+	    ln --symbolic "`realpath "$OPTARG"`" $source/`uuid -v4`
 	    ;;
         h)
 	    cat <<EOF
