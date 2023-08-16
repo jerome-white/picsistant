@@ -131,7 +131,6 @@ if __name__ == '__main__':
     arguments.add_argument('--destination', type=Path)
     arguments.add_argument('--maxtries', type=int, default=100)
     arguments.add_argument('--with-videos', action='store_true')
-    # arguments.add_argument('--adjust')
     arguments.add_argument('--workers', type=int)
     args = arguments.parse_args()
 
