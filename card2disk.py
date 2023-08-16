@@ -1,6 +1,7 @@
 import os
 import sys
 import csv
+import math
 import stat
 import shutil
 import logging
@@ -70,27 +71,39 @@ class ExifPath:
 # Use the time to create a destination file name
 #
 class PathName:
-    def __init__(self, destination, lock, maxtries=None):
+    @staticmethod
+    def zcount(upper):
+        if upper < 1:
+            raise ArithmeticError('Max count must be greater than zero')
+        digits = math.floor(math.log10(upper - 1)) + 1
+
+        for i in it.count():
+            if i >= upper:
+                break
+            yield f'{i:0{digits}d}'
+
+    def __init__(self, destination, lock, maxtries):
         self.destination = destination
         self.lock = lock
-        self.maxtries = float('inf') if maxtries is None else maxtries
+        self.maxtries = maxtries
 
     def __call__(self, path):
         basename = path.with_suffix('')
 
         self.lock.acquire()
         try:
-            for i in it.count():
-                if i > self.maxtries:
-                    raise FileExistsError('Cannot create unique filename')
-                fname = f'{basename}-{i:02d}{path.suffix}'
+            for i in self.zcount(self.maxtries):
+                fname = f'{basename}-{i}{path.suffix}'
                 target = self.destination.joinpath(fname)
                 if not target.exists():
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.touch()
+
                     return target
         finally:
             self.lock.release()
+
+        raise FileExistsError('Cannot create unique filename')
 
 def func(queue, lock, args):
     exif2path = ExifPath(args.with_videos)
@@ -115,7 +128,7 @@ def func(queue, lock, args):
 if __name__ == '__main__':
     arguments = ArgumentParser()
     arguments.add_argument('--destination', type=Path)
-    arguments.add_argument('--maxtries', type=int)
+    arguments.add_argument('--maxtries', type=int, default=100)
     arguments.add_argument('--with-videos', action='store_true')
     # arguments.add_argument('--adjust')
     arguments.add_argument('--workers', type=int)
