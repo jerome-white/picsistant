@@ -36,7 +36,7 @@ if [ -n "$adjust" ]; then
 fi
 
 caffeinate -i bash <<EOF
-exiftool -recurse -csv -quiet $source | \
-    python card2disk.py --destination $destination
+exiftool -recurse -csv -quiet $source \
+    | python card2disk.py --destination $destination
 rm --recursive --force $STUDIO
 EOF
