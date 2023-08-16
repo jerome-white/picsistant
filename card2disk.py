@@ -108,6 +108,7 @@ class PathName:
 def func(queue, lock, args):
     exif2path = ExifPath(args.with_videos)
     path2fname = PathName(args.destination, lock, args.maxtries)
+    mode = stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
 
     while True:
         exif = queue.get()
@@ -118,7 +119,7 @@ def func(queue, lock, args):
             target = path2fname(path)
             (src, dst) = map(str, (source, target))
             shutil.copy2(src, dst)
-            os.chmod(dst, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+            os.chmod(dst, mode)
             logging.info('{} -> {}'.format(source.name, target))
         except (TypeError, ValueError, FileExistsError) as err:
             logging.error('{} {}'.format(source, err))
