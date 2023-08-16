@@ -5,7 +5,6 @@ import stat
 import shutil
 import logging
 import itertools as it
-from string import Template
 from pathlib import Path
 from datetime import datetime
 from argparse import ArgumentParser
@@ -77,17 +76,14 @@ class PathName:
         self.maxtries = float('inf') if maxtries is None else maxtries
 
     def __call__(self, path):
-        basename = path.parent.joinpath(path.stem)
-        tstring = '{}-$version{}'.format(basename, path.suffix)
-        template = Template(tstring)
+        basename = path.with_suffix('')
 
         self.lock.acquire()
         try:
             for i in it.count():
                 if i > self.maxtries:
                     raise FileExistsError('Cannot create unique filename')
-                version = '{:02d}'.format(i)
-                fname = template.substitute(version=version)
+                fname = f'{basename}-{i:02d}{path.suffix}'
                 target = self.destination.joinpath(fname)
                 if not target.exists():
                     target.parent.mkdir(parents=True, exist_ok=True)
