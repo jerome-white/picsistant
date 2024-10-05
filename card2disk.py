@@ -23,7 +23,6 @@ logging.captureWarnings(True)
 #
 #
 class ExifPath:
-    _time = '%Y:%m:%d %H:%M:%S'
     _keys = (
         'CreateDate',
         'DateTimeOriginal',
@@ -46,26 +45,29 @@ class ExifPath:
             raise TypeError(f'Unsupported file type "{mime}"')
 
         #
-        # Extract the time at which the picture was taken
-        #
-        for i in self._keys:
-            if i in exif:
-                creation = exif[i]
-                break
-        else:
-            raise ValueError('Cannot establish creation time')
-
-        #
         # Use the time to build a filename
         #
-        ctime = (datetime
-                 .strptime(creation, self._time)
+        ctime = (self
+                 .mktime(exif)
                  .strftime('%Y %m-%b %d-%H%M%S')
                  .upper()
                  .split())
         path = Path(*ctime)
 
         return path.with_suffix(suffix)
+
+    #
+    # Extract the time at which the picture was taken
+    #
+    def mktime(self, exif):
+        for i in self._keys:
+            creation = exif.get(i)
+            try:
+                return datetime.strptime(creation, '%Y:%m:%d %H:%M:%S')
+            except (TypeError, ValueError):
+                logging.warning(f'Invalid {i}: "{creation}"')
+
+        raise ValueError('Cannot establish creation time')
 
 #
 # Use the time to create a destination file name
