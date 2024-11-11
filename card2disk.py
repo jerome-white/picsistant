@@ -23,11 +23,7 @@ logging.captureWarnings(True)
 #
 #
 class ExifPath:
-    _keys = (
-        'CreateDate',
-        'DateTimeOriginal',
-        'ModifyDate',
-    )
+    _exif_dt = '%Y:%m:%d %H:%M:%S'
 
     def __init__(self, with_videos):
         self.support = set([
@@ -35,6 +31,13 @@ class ExifPath:
         ])
         if with_videos:
             self.support.add('video')
+
+        self.dates = (
+            ('CreateDate', self._exif_dt),
+            ('DateTimeOriginal', self._exif_dt),
+            ('ModifyDate', self._exif_dt),
+            ('FileModifyDate', self._exif_dt + '%z'),
+        )
 
     def __call__(self, exif, suffix):
         #
@@ -60,12 +63,12 @@ class ExifPath:
     # Extract the time at which the picture was taken
     #
     def mktime(self, exif):
-        for i in self._keys:
-            creation = exif.get(i)
+        for (k, s) in self.dates:
+            creation = exif.get(k)
             try:
-                return datetime.strptime(creation, '%Y:%m:%d %H:%M:%S')
+                return datetime.strptime(creation, s)
             except (TypeError, ValueError):
-                logging.warning(f'Invalid {i}: "{creation}"')
+                logging.debug(f'Invalid {k}: "{creation}"')
 
         raise ValueError('Cannot establish creation time')
 
