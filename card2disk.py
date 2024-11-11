@@ -112,7 +112,7 @@ class PathName:
 
 def func(queue, lock, args):
     exif2path = ExifPath(args.with_videos)
-    path2fname = PathName(args.destination, lock, args.maxtries)
+    path2fname = PathName(args.destination, lock, args.max_tries)
     mode = stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
 
     while True:
@@ -134,7 +134,7 @@ def func(queue, lock, args):
 if __name__ == '__main__':
     arguments = ArgumentParser()
     arguments.add_argument('--destination', type=Path)
-    arguments.add_argument('--maxtries', type=int, default=100)
+    arguments.add_argument('--max-tries', type=int, default=100)
     arguments.add_argument('--with-videos', action='store_true')
     arguments.add_argument('--workers', type=int)
     args = arguments.parse_args()
