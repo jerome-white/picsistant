@@ -40,5 +40,6 @@ fi
 caffeinate -i bash <<EOF
 exiftool -recurse -csv -quiet $source \
     | python card2disk.py $videos --destination $destination
-rm --recursive --force $STUDIO
 EOF
+# rm --recursive --force $STUDIO
+echo $source
