@@ -4,20 +4,13 @@ import csv
 import math
 import stat
 import shutil
-import logging
 import itertools as it
 from pathlib import Path
 from datetime import datetime
 from argparse import ArgumentParser
 from multiprocessing import Pool, Lock, JoinableQueue
 
-#
-# Setup logger
-#
-lvl = os.environ.get('PYTHONLOGLEVEL', 'warning').upper()
-fmt = '[ %(asctime)s %(levelname)s %(process)d ] %(message)s'
-logging.basicConfig(format=fmt, datefmt="%H:%M:%S", level=lvl)
-logging.captureWarnings(True)
+from pictilities import Logger
 
 #
 #
@@ -68,7 +61,7 @@ class ExifPath:
             try:
                 return datetime.strptime(creation, s)
             except (TypeError, ValueError):
-                logging.debug(f'Invalid {k}: "{creation}"')
+                Logger.debug(f'Invalid {k}: "{creation}"')
 
         raise ValueError('Cannot establish creation time')
 
@@ -125,9 +118,9 @@ def func(queue, lock, args):
             (src, dst) = map(str, (source, target))
             shutil.copy2(src, dst)
             os.chmod(dst, mode)
-            logging.info('{} -> {}'.format(source.name, target))
+            Logger.info('{} -> {}'.format(source.name, target))
         except (TypeError, ValueError, FileExistsError) as err:
-            logging.error('{} {}'.format(source, err))
+            Logger.error('{} {}'.format(source, err))
         finally:
             queue.task_done()
 
