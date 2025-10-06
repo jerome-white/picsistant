@@ -29,7 +29,7 @@ class ExifPath:
             ('CreateDate', self._exif_dt),
             ('DateTimeOriginal', self._exif_dt),
             ('ModifyDate', self._exif_dt),
-            ('FileModifyDate', self._exif_dt + '%z'),
+            ('FileModifyDate', f'{self._exif_dt}%z'),
         )
 
     def __call__(self, exif, suffix):
