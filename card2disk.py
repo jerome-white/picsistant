@@ -61,7 +61,7 @@ class ExifPath:
             try:
                 return datetime.strptime(creation, s)
             except (TypeError, ValueError):
-                Logger.debug(f'Invalid {k}: "{creation}"')
+                Logger.debug('Invalid %s: "%s"', k, creation)
 
         raise ValueError('Cannot establish creation time')
 
@@ -118,9 +118,9 @@ def func(queue, lock, args):
             (src, dst) = map(str, (source, target))
             shutil.copy2(src, dst)
             os.chmod(dst, mode)
-            Logger.info('{} -> {}'.format(source.name, target))
+            Logger.info('%s -> %s', source.name, target)
         except (TypeError, ValueError, FileExistsError) as err:
-            Logger.error('{} {}'.format(source, err))
+            Logger.error('%s %s', source, err)
         finally:
             queue.task_done()
 
