@@ -25,8 +25,10 @@ def resolve(results):
 if __name__ == '__main__':
     arguments = ArgumentParser()
     arguments.add_argument('--photos-db', type=Path)
+    arguments.add_argument('--dry-run', action='store_true')
     args = arguments.parse_args()
 
     for path in resolve(deleted(args.photos_db)):
         Logger.info(path)
-        path.unlink()
+        if not args.dry_run:
+            path.unlink()
