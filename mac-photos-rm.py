@@ -17,10 +17,22 @@ def deleted(db):
 
             yield from map(op.itemgetter(0), res)
 
-def resolve(results):
+def locate(results):
     for r in results:
         path = Path(r)
         yield from path.parent.rglob(f'{path.stem}.*')
+
+def resolve(path):
+    db = path
+    if db.is_dir():
+        db = (db
+              .joinpath('database', 'Photos')
+              .with_suffix('.sqlite'))
+    if not db.exists():
+        err = f'Cannot infer database location from {path}'
+        raise FileNotFoundError(err)
+
+    return db
 
 if __name__ == '__main__':
     arguments = ArgumentParser()
@@ -28,17 +40,7 @@ if __name__ == '__main__':
     arguments.add_argument('--dry-run', action='store_true')
     args = arguments.parse_args()
 
-    db = args.photos_db
-    if db.is_dir():
-        db = (db
-              .joinpath('database', 'Photos')
-              .with_suffix('.sqlite'))
-        if not db.exists():
-            raise FileNotFoundError(
-                f'Cannot infer database location from {args.photos_db}',
-            )
-
-    for path in resolve(deleted(db)):
+    for path in locate(deleted(resolve(args.photos_db))):
         Logger.info(path)
         if not args.dry_run:
             path.unlink(missing_ok=True)
