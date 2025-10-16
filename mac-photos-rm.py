@@ -41,4 +41,4 @@ if __name__ == '__main__':
     for path in resolve(deleted(db)):
         Logger.info(path)
         if not args.dry_run:
-            path.unlink()
+            path.unlink(missing_ok=True)
