@@ -28,7 +28,17 @@ if __name__ == '__main__':
     arguments.add_argument('--dry-run', action='store_true')
     args = arguments.parse_args()
 
-    for path in resolve(deleted(args.photos_db)):
+    db = args.photos_db
+    if db.is_dir():
+        db = (db
+              .joinpath('database', 'Photos')
+              .with_suffix('.sqlite'))
+        if not db.exists():
+            raise FileNotFoundError(
+                f'Cannot infer database location from {args.photos_db}',
+            )
+
+    for path in resolve(deleted(db)):
         Logger.info(path)
         if not args.dry_run:
             path.unlink()
