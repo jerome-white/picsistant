@@ -1,5 +1,7 @@
 #!/bin/bash
 
+ROOT=`git rev-parse --show-toplevel`
+
 export PYTHONLOGLEVEL=info
 STUDIO=`mktemp --directory`
 
@@ -39,6 +41,6 @@ fi
 
 caffeinate -i bash <<EOF
 exiftool -recurse -csv -quiet $source \
-    | python card2disk.py $videos --destination $destination
+    | python $ROOT/card2disk.py $videos --destination $destination
 EOF
 rm --recursive --force $STUDIO
