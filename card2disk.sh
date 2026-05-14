@@ -18,7 +18,7 @@ Usage: $0
  -s Source
  -d Destination
  -v Also archive video
- -a Adjust picture timestamp: [+|-]=[H:MM]
+ -a Adjust picture timestamp: [+|-][HH:MM]
     This argument is passed directly to exiftool's -AllDates
     option; remember to quote! See the exiftool manpage.
 EOF
@@ -33,7 +33,7 @@ done
 
 if [ -n "$adjust" ]; then
     tmp=`mktemp --directory --tmpdir=$STUDIO`
-    exiftool -recurse -AllDates"${adjust}" -out $tmp $source
+    exiftool -recurse -AllDates="${adjust}" -out $tmp $source
     source=$tmp
 fi
 
